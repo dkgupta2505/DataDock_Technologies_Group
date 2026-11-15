@@ -29,7 +29,7 @@
 				}
 			},
 			{
-				"name": "Emp_baseLocatio_load",
+				"name": "Emp_adls_csv",
 				"type": "ExecutePipeline",
 				"dependsOn": [
 					{
@@ -45,7 +45,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
-						"referenceName": "Emp_baseLocation_load_main_Gen2",
+						"referenceName": "Emp_adls_csv_Gen2",
 						"type": "PipelineReference"
 					},
 					"waitOnCompletion": true,
