@@ -1,0 +1,160 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-dd-prct"
+		},
+		"LinkedServices_OnPremSQLDB_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LinkedServices_OnPremSQLDB'"
+		},
+		"linkedService_azSQLdb_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'linkedService_azSQLdb'"
+		},
+		"linkedServicesForAzure_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'linkedServicesForAzure'"
+		},
+		"linkedServices_file_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'linkedServices_file'"
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "DESKTOP-KKG2NNB"
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "@{linkedService().db_name}"
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "DESKTOP-KKG2NNB\\Admin"
+		},
+		"githubAPI_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://raw.githubusercontent.com"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "az-sqlserver-dev-ind.database.windows.net"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "sqldb-hr-prod"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "dk-admin"
+		},
+		"linkedServicesForAzure_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://ddtechstorage.dfs.core.windows.net/"
+		},
+		"linkedServices_file_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "E:\\Azure-Databricks\\Data\\emp_db"
+		},
+		"linkedServices_file_properties_typeProperties_userId": {
+			"type": "string",
+			"defaultValue": "DESKTOP-KKG2NNB\\Admin"
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "adf-dd-prct_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"linkedService_azSQLdb_password": {
+						"value": "[parameters('linkedService_azSQLdb_password')]"
+					},
+					"LinkedServices_OnPremSQLDB_password": {
+						"value": "[parameters('LinkedServices_OnPremSQLDB_password')]"
+					},
+					"linkedServicesForAzure_accountKey": {
+						"value": "[parameters('linkedServicesForAzure_accountKey')]"
+					},
+					"linkedServices_file_password": {
+						"value": "[parameters('linkedServices_file_password')]"
+					},
+					"linkedService_azSQLdb_properties_typeProperties_server": {
+						"value": "[parameters('linkedService_azSQLdb_properties_typeProperties_server')]"
+					},
+					"linkedService_azSQLdb_properties_typeProperties_database": {
+						"value": "[parameters('linkedService_azSQLdb_properties_typeProperties_database')]"
+					},
+					"linkedService_azSQLdb_properties_typeProperties_userName": {
+						"value": "[parameters('linkedService_azSQLdb_properties_typeProperties_userName')]"
+					},
+					"LinkedServices_OnPremSQLDB_properties_typeProperties_server": {
+						"value": "[parameters('LinkedServices_OnPremSQLDB_properties_typeProperties_server')]"
+					},
+					"LinkedServices_OnPremSQLDB_properties_typeProperties_database": {
+						"value": "[parameters('LinkedServices_OnPremSQLDB_properties_typeProperties_database')]"
+					},
+					"LinkedServices_OnPremSQLDB_properties_typeProperties_userName": {
+						"value": "[parameters('LinkedServices_OnPremSQLDB_properties_typeProperties_userName')]"
+					},
+					"githubAPI_properties_typeProperties_url": {
+						"value": "[parameters('githubAPI_properties_typeProperties_url')]"
+					},
+					"linkedServicesForAzure_properties_typeProperties_url": {
+						"value": "[parameters('linkedServicesForAzure_properties_typeProperties_url')]"
+					},
+					"linkedServices_file_properties_typeProperties_host": {
+						"value": "[parameters('linkedServices_file_properties_typeProperties_host')]"
+					},
+					"linkedServices_file_properties_typeProperties_userId": {
+						"value": "[parameters('linkedServices_file_properties_typeProperties_userId')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "adf-dd-prct_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'adf-dd-prct_ArmTemplate_0')]"
+			]
+		}
+	]
+}

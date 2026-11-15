@@ -1,0 +1,51 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adf-dd-prct"
+		},
+		"LinkedServices_OnPremSQLDB_password": {
+			"value": ""
+		},
+		"linkedService_azSQLdb_password": {
+			"value": ""
+		},
+		"linkedServicesForAzure_accountKey": {
+			"value": ""
+		},
+		"linkedServices_file_password": {
+			"value": ""
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_server": {
+			"value": "DESKTOP-KKG2NNB"
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_database": {
+			"value": "@{linkedService().db_name}"
+		},
+		"LinkedServices_OnPremSQLDB_properties_typeProperties_userName": {
+			"value": "DESKTOP-KKG2NNB\\Admin"
+		},
+		"githubAPI_properties_typeProperties_url": {
+			"value": "https://raw.githubusercontent.com"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_server": {
+			"value": "az-sqlserver-dev-ind.database.windows.net"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_database": {
+			"value": "sqldb-hr-prod"
+		},
+		"linkedService_azSQLdb_properties_typeProperties_userName": {
+			"value": "dk-admin"
+		},
+		"linkedServicesForAzure_properties_typeProperties_url": {
+			"value": "https://ddtechstorage.dfs.core.windows.net/"
+		},
+		"linkedServices_file_properties_typeProperties_host": {
+			"value": "E:\\Azure-Databricks\\Data\\emp_db"
+		},
+		"linkedServices_file_properties_typeProperties_userId": {
+			"value": "DESKTOP-KKG2NNB\\Admin"
+		}
+	}
+}
