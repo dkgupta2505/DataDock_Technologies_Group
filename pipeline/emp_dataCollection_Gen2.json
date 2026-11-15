@@ -97,6 +97,39 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "OnPremCsvFile",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "OnPremJsonFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Employee_shiftAllotment_load",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"cc_Employee_shiftAllotment": {
+							"value": "@pipeline().parameters.c_Employee_shiftAllotment",
+							"type": "Expression"
+						},
+						"cc_batch_id": {
+							"value": "@pipeline().parameters.c_p_batch_id",
+							"type": "Expression"
+						}
+					}
+				}
 			}
 		],
 		"parameters": {
@@ -113,6 +146,9 @@
 				"type": "string"
 			},
 			"c_Employee_Stack": {
+				"type": "string"
+			},
+			"c_Employee_shiftAllotment": {
 				"type": "string"
 			}
 		},
