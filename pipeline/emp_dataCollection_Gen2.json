@@ -5,8 +5,6 @@
 			{
 				"name": "src_Employee_info_from_HR",
 				"type": "ExecutePipeline",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [],
 				"policy": {
 					"secureInput": false
@@ -47,7 +45,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"pipeline": {
-						"referenceName": "Emp_baseLocation_load_main",
+						"referenceName": "Emp_baseLocation_load_main_Gen2",
 						"type": "PipelineReference"
 					},
 					"waitOnCompletion": true,
