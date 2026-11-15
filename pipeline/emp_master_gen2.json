@@ -89,6 +89,10 @@
 						"c_Emp_baseLocation": {
 							"value": "@pipeline().parameters.p_Emp_baseLocation",
 							"type": "Expression"
+						},
+						"c_Employee_Stack": {
+							"value": "@pipeline().parameters.p_Employee_Stack",
+							"type": "Expression"
 						}
 					}
 				}
@@ -106,6 +110,10 @@
 			"p_Emp_baseLocation": {
 				"type": "string",
 				"defaultValue": "Emp_baseLocation"
+			},
+			"p_Employee_Stack": {
+				"type": "string",
+				"defaultValue": "Employee_Stack"
 			}
 		},
 		"variables": {

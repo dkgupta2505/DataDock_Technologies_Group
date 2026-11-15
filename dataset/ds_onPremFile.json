@@ -1,0 +1,31 @@
+{
+	"name": "ds_onPremFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "linkedServices_file",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"folderPath": "csv/Adf+databricks/OnPrem_JsonFormat"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"Emp_id": {
+					"type": "integer"
+				},
+				"Stack_Layer": {
+					"type": "string"
+				},
+				"Tools_Technologies": {
+					"type": "string"
+				}
+			}
+		}
+	}
+}

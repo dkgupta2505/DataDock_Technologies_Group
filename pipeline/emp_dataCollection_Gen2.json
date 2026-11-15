@@ -64,6 +64,39 @@
 						}
 					}
 				}
+			},
+			{
+				"name": "OnPremJsonFile",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Emp_adls_csv",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Load_Employee_Stack",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"cc_p_Employee_Stack": {
+							"value": "@pipeline().parameters.c_Employee_Stack",
+							"type": "Expression"
+						},
+						"cc_p_batch_id": {
+							"value": "@pipeline().parameters.c_p_batch_id",
+							"type": "Expression"
+						}
+					}
+				}
 			}
 		],
 		"parameters": {
@@ -77,6 +110,9 @@
 				"type": "string"
 			},
 			"c_Emp_baseLocation": {
+				"type": "string"
+			},
+			"c_Employee_Stack": {
 				"type": "string"
 			}
 		},
