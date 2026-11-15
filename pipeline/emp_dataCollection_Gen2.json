@@ -57,6 +57,10 @@
 						"c2_vb_batch_id_emp_baseLocation": {
 							"value": "@pipeline().parameters.c_p_batch_id",
 							"type": "Expression"
+						},
+						"cc2_p_Employee_designation_from_TA": {
+							"value": "@pipeline().parameters.c_Employee_designation_from_TA",
+							"type": "Expression"
 						}
 					}
 				}
