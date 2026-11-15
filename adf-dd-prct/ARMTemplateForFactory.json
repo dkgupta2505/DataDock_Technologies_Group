@@ -2917,7 +2917,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/Emp_baseLocation_load_main_Gen2')]",
+			"name": "[concat(parameters('factoryName'), '/Emp_adls_csv_Gen2')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -3483,7 +3483,7 @@
 						}
 					},
 					{
-						"name": "Emp_baseLocatio_load",
+						"name": "Emp_adls_csv",
 						"type": "ExecutePipeline",
 						"dependsOn": [
 							{
@@ -3499,7 +3499,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"pipeline": {
-								"referenceName": "Emp_baseLocation_load_main_Gen2",
+								"referenceName": "Emp_adls_csv_Gen2",
 								"type": "PipelineReference"
 							},
 							"waitOnCompletion": true,
@@ -3545,7 +3545,7 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/emp_file_load')]",
-				"[concat(variables('factoryId'), '/pipelines/Emp_baseLocation_load_main_Gen2')]"
+				"[concat(variables('factoryId'), '/pipelines/Emp_adls_csv_Gen2')]"
 			]
 		},
 		{
