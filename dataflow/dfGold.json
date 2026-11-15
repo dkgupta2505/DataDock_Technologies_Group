@@ -1,0 +1,136 @@
+{
+	"name": "dfGold",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference"
+					},
+					"name": "srcSilver"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "split1"
+				},
+				{
+					"name": "alterRow1"
+				},
+				{
+					"name": "alterRow2"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          EmployeeSK as integer,",
+				"          Emp_id as integer,",
+				"          First_Name as string,",
+				"          Last_Name as string,",
+				"          Age as integer,",
+				"          Band as string,",
+				"          Phone as string,",
+				"          Email as string,",
+				"          State as string,",
+				"          City as string,",
+				"          Flage as string,",
+				"          DOJ as date,",
+				"          DateOfLeaving as date,",
+				"          EffectiveFrom as date,",
+				"          EffectiveTo as date,",
+				"          Load_dt as timestamp,",
+				"          modify_dt as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> srcSilver",
+				"srcSilver split(!isNull(EmployeeSK),",
+				"     disjoint: false) ~> split1@(update, insert)",
+				"split1@update alterRow(updateIf(true())) ~> alterRow1",
+				"select1 alterRow(insertIf(true())) ~> alterRow2",
+				"split1@insert select(mapColumn(",
+				"          Emp_id,",
+				"          First_Name,",
+				"          Last_Name,",
+				"          Age,",
+				"          Band,",
+				"          Phone,",
+				"          Email,",
+				"          State,",
+				"          City,",
+				"          Flage,",
+				"          DOJ,",
+				"          DateOfLeaving,",
+				"          EffectiveFrom,",
+				"          EffectiveTo,",
+				"          Load_dt,",
+				"          modify_dt",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:false,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['EmployeeSK','Emp_id'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          EmployeeSK,",
+				"          Emp_id,",
+				"          First_Name,",
+				"          Last_Name,",
+				"          Age,",
+				"          Band,",
+				"          Phone,",
+				"          Email,",
+				"          State,",
+				"          City,",
+				"          Flage,",
+				"          DOJ,",
+				"          DateOfLeaving,",
+				"          EffectiveFrom,",
+				"          EffectiveTo,",
+				"          Load_dt,",
+				"          modify_dt",
+				"     )) ~> sink1",
+				"alterRow2 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink2"
+			]
+		}
+	}
+}

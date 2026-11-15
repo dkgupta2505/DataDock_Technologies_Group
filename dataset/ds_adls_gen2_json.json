@@ -1,0 +1,29 @@
+{
+	"name": "ds_adls_gen2_json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "linkedServicesForAzure",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"filename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().filename",
+					"type": "Expression"
+				},
+				"folderPath": "data_Landing_zone",
+				"fileSystem": "adf"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

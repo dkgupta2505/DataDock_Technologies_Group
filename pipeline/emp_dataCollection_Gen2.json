@@ -1,0 +1,88 @@
+{
+	"name": "emp_dataCollection_Gen2",
+	"properties": {
+		"activities": [
+			{
+				"name": "src_Employee_info_from_HR",
+				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "emp_file_load",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"c2_Employee_info_from_HR": {
+							"value": "@pipeline().parameters.c_Employee_info_from_HR",
+							"type": "Expression"
+						},
+						"c2_batch_id": {
+							"value": "@pipeline().parameters.c_p_batch_id",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Emp_baseLocatio_load",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_info_from_HR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Emp_baseLocation_load_main",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"cc2_p_Emp_baseLocation": {
+							"value": "@pipeline().parameters.c_Emp_baseLocation",
+							"type": "Expression"
+						},
+						"c2_vb_batch_id_emp_baseLocation": {
+							"value": "@pipeline().parameters.c_p_batch_id",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"c_Employee_info_from_HR": {
+				"type": "string"
+			},
+			"c_p_batch_id": {
+				"type": "int"
+			},
+			"c_Employee_designation_from_TA": {
+				"type": "string"
+			},
+			"c_Emp_baseLocation": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "empi_wt_incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-15T04:01:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

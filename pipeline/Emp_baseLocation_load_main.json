@@ -1,0 +1,281 @@
+{
+	"name": "Emp_baseLocation_load_main",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get_emp_baselocation_file",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_adlsFolder",
+						"type": "DatasetReference"
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "flter_Emp_baseLocation_load",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get_emp_baselocation_file",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get_emp_baselocation_file').output.childItems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(concat(pipeline().parameters.cc2_p_Emp_baseLocation,'.parquet'), item().name)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "get_lastModificationDT",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "flter_Emp_baseLocation_load",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@activity('flter_Emp_baseLocation_load').output.value[0].name",
+								"type": "Expression"
+							},
+							"adls_folderName": "source"
+						}
+					},
+					"fieldList": [
+						"lastModified"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Lookup1",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "get_lastModificationDT",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select sum(cnt) as cnt from  \n(select 1 as cnt\nfrom dbo.file_process_log_tbl \nwhere file_name='@{activity('flter_Emp_baseLocation_load').output.value[0].name}' and \nsrc_file_modify_dt='@{activity('get_lastModificationDT').output.lastModified}'\nunion all\nselect 1  )t1",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "dbo",
+							"tablename": "file_process_log_tbl"
+						}
+					}
+				}
+			},
+			{
+				"name": "If Condition1",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Lookup1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Lookup1').output.firstRow.cnt, 1)\n\n",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "ParquetSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "ParquetReadSettings"
+									}
+								},
+								"sink": {
+									"type": "ParquetSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "ParquetWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_adls_parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"filename": {
+											"value": "@{pipeline().parameters.cc2_p_Emp_baseLocation}.parquet",
+											"type": "Expression"
+										},
+										"foldername": "source"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_parquet",
+									"type": "DatasetReference",
+									"parameters": {
+										"filename": {
+											"value": "@{pipeline().parameters.cc2_p_Emp_baseLocation}_@{formatDateTime(utcNow(),'yyyyMMdd')}.parquet",
+											"type": "Expression"
+										},
+										"foldername": "data_Landing_zone"
+									}
+								}
+							]
+						},
+						{
+							"name": "Script1",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "Copy data1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "linkedService_azSQLdb",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "INSERT INTO dbo.file_process_log_tbl\n(\n    batch_id,\n    file_name,\n    src_file_modify_dt,\n    load_dt\n)\nSELECT\n    @{pipeline().parameters.c2_vb_batch_id_emp_baseLocation} AS batch_id,\n   '@{activity('flter_Emp_baseLocation_load').output.value[0].name}' as file_name,\n'@{activity('get_lastModificationDT').output.lastModified}' as last_modification_dt,\n    '@{utcNow('yyyy-MM-dd HH:mm:ss')}' AS load_dt;",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"cc2_p_Emp_baseLocation": {
+				"type": "string"
+			},
+			"c2_vb_batch_id_emp_baseLocation": {
+				"type": "int"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-15T04:01:15Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

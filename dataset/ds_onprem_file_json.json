@@ -1,0 +1,41 @@
+{
+	"name": "ds_onprem_file_json",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "linkedServices_file",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"filename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": {
+					"value": "@dataset().filename",
+					"type": "Expression"
+				},
+				"folderPath": "csv/Adf+databricks/OnPrem_JsonFormat"
+			}
+		},
+		"schema": {
+			"type": "object",
+			"properties": {
+				"Emp_id": {
+					"type": "integer"
+				},
+				"Stack_Layer": {
+					"type": "string"
+				},
+				"Tools_Technologies": {
+					"type": "string"
+				}
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,48 @@
+{
+	"name": "gold",
+	"properties": {
+		"activities": [
+			{
+				"name": "silverToGold",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "dfGold",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"srcSilver": {
+								"schema_name": "silver",
+								"tablename": "Dim_Employee"
+							},
+							"sink1": {
+								"schema_name": "gold",
+								"tablename": "Dim_Employee"
+							},
+							"sink2": {
+								"schema_name": "gold",
+								"tablename": "Dim_Employee"
+							}
+						}
+					},
+					"integrationRuntime": {
+						"referenceName": "ir-azure-services",
+						"type": "IntegrationRuntimeReference"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-10-26T19:16:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

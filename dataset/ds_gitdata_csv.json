@@ -1,0 +1,32 @@
+{
+	"name": "ds_gitdata_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "githubAPI",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"fileName": {
+				"type": "string",
+				"defaultValue": "dkgupta2505/DataDock_Technologies_Group/refs/heads/main/Employee_info_from_HR"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation",
+				"relativeUrl": {
+					"value": "dkgupta2505/DataDock_Technologies_Group/refs/heads/main/@{dataset().fileName}.csv",
+					"type": "Expression"
+				}
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

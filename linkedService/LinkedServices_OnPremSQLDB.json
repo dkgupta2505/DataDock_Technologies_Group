@@ -1,0 +1,27 @@
+{
+	"name": "LinkedServices_OnPremSQLDB",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"parameters": {
+			"db_name": {
+				"type": "string",
+				"defaultValue": "OnPrem_sqldb_hr_prod"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"server": "DESKTOP-KKG2NNB",
+			"database": "@{linkedService().db_name}",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "Windows",
+			"userName": "DESKTOP-KKG2NNB\\Admin",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIzMDQzYmMyNC1mNzg0LTRmOTItYmE4OC05ZWM0MGJkODZiZGUiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "ir-dkpc",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

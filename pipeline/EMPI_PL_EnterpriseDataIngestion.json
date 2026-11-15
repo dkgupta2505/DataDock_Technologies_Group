@@ -1,0 +1,482 @@
+{
+	"name": "EMPI_PL_EnterpriseDataIngestion",
+	"properties": {
+		"activities": [
+			{
+				"name": "src_Employee_info_from_HR",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_gitdata_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"fileName": {
+								"value": "@pipeline().parameters.p_Employee_info_from_HR",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_info_from_HR}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+								"type": "Expression"
+							},
+							"adls_folderName": "data_Landing_zone"
+						}
+					}
+				]
+			},
+			{
+				"name": "src_Employee_designation_from_TA",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_info_from_HR",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_designation_from_TA}.csv",
+								"type": "Expression"
+							},
+							"adls_folderName": "source"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_designation_from_TA}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+								"type": "Expression"
+							},
+							"adls_folderName": "data_Landing_zone"
+						}
+					}
+				]
+			},
+			{
+				"name": "src_Employee_Stack",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_designation_from_TA",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "FileServerReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_onprem_file_json",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_Stack}.json",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_gen2_json",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_Stack}_@{formatDateTime(utcNow(),'yyyyMMdd')}.json",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "src_Emp_baseLocation",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_Stack",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_adls_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Emp_baseLocation}.parquet",
+								"type": "Expression"
+							},
+							"foldername": "source"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Emp_baseLocation}_@{formatDateTime(utcNow(),'yyyyMMdd')}.parquet",
+								"type": "Expression"
+							},
+							"foldername": "data_Landing_zone"
+						}
+					}
+				]
+			},
+			{
+				"name": "src_Employee_shiftAllotment",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "src_Emp_baseLocation",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "FileServerReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_onprem_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_shiftAllotment}.csv",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.p_Employee_shiftAllotment}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+								"type": "Expression"
+							},
+							"adls_folderName": "data_Landing_zone"
+						}
+					}
+				]
+			},
+			{
+				"name": "src_Employee_Project_allocation_from_RDG",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_shiftAllotment",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "select * from dbo.Employee_Project_allocation_from_RDG",
+						"queryTimeout": "02:00:00",
+						"isolationLevel": "ReadUncommitted",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_onprem_sqlserver",
+						"type": "DatasetReference",
+						"parameters": {
+							"scheam": {
+								"value": "dbo",
+								"type": "Expression"
+							},
+							"tablename": {
+								"value": "Employee_Project_allocation_from_RDG",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": "Employee_Project_allocation_from_RDG_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+							"adls_folderName": {
+								"value": "data_Landing_zone",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"p_Employee_info_from_HR": {
+				"type": "string"
+			},
+			"p_Employee_designation_from_TA": {
+				"type": "string"
+			},
+			"p_Employee_Stack": {
+				"type": "string"
+			},
+			"p_Emp_baseLocation": {
+				"type": "string"
+			},
+			"p_Employee_Project_allocation_from_RDG": {
+				"type": "string"
+			},
+			"p_Employee_shiftAllotment": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "EMP_WTO_Incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-12T10:46:20Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

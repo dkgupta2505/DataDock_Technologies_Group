@@ -1,0 +1,34 @@
+{
+	"name": "ds_onprem_sqlserver",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LinkedServices_OnPremSQLDB",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"db_name": "dkgupta"
+			}
+		},
+		"parameters": {
+			"scheam": {
+				"type": "string"
+			},
+			"tablename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": {
+				"value": "@dataset().scheam",
+				"type": "Expression"
+			},
+			"table": {
+				"value": "@dataset().tablename",
+				"type": "Expression"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

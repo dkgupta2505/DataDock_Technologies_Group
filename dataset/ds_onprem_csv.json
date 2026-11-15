@@ -1,0 +1,49 @@
+{
+	"name": "ds_onprem_csv",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "linkedServices_file",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"filename": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": {
+					"value": "@dataset().filename",
+					"type": "Expression"
+				},
+				"folderPath": "csv/Adf+databricks/OnPremFile"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "Emp_id",
+				"type": "String"
+			},
+			{
+				"name": "Shift Type",
+				"type": "String"
+			},
+			{
+				"name": "Shift_start_hr",
+				"type": "String"
+			},
+			{
+				"name": "Shift_end",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

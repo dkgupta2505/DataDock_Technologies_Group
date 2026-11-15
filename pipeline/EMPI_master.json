@@ -1,0 +1,176 @@
+{
+	"name": "EMPI_master",
+	"properties": {
+		"activities": [
+			{
+				"name": "data_collecttion",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "EMPI_PL_EnterpriseDataIngestion",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_Employee_info_from_HR": {
+							"value": "@pipeline().parameters.mp_Employee_info_from_HR",
+							"type": "Expression"
+						},
+						"p_Employee_designation_from_TA": {
+							"value": "@pipeline().parameters.mp_Employee_designation_from_TA",
+							"type": "Expression"
+						},
+						"p_Employee_Stack": {
+							"value": "@pipeline().parameters.mp_Employee_Stack",
+							"type": "Expression"
+						},
+						"p_Emp_baseLocation": {
+							"value": "@pipeline().parameters.mp_Emp_baseLocation",
+							"type": "Expression"
+						},
+						"p_Employee_Project_allocation_from_RDG": {
+							"value": "@pipeline().parameters.mp_Employee_Project_allocation_from_RDG",
+							"type": "Expression"
+						},
+						"p_Employee_shiftAllotment": {
+							"value": "@pipeline().parameters.mp_Employee_shiftAllotment",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Execute Pipeline1",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "data_collecttion",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "EMPI_dataPrep_for_bronze",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"p_Employee_info_from_HR": {
+							"value": "@pipeline().parameters.mp_Employee_info_from_HR",
+							"type": "Expression"
+						},
+						"p_Employee_designation_from_TA": {
+							"value": "@pipeline().parameters.mp_Employee_designation_from_TA",
+							"type": "Expression"
+						},
+						"p_Employee_Stack": {
+							"value": "@pipeline().parameters.mp_Employee_Stack",
+							"type": "Expression"
+						},
+						"p_Emp_baseLocation": {
+							"value": "@pipeline().parameters.mp_Emp_baseLocation",
+							"type": "Expression"
+						},
+						"p_Employee_Project_allocation_from_RDG": {
+							"value": "@pipeline().parameters.mp_Employee_Project_allocation_from_RDG",
+							"type": "Expression"
+						},
+						"p_Employee_shiftAllotment": {
+							"value": "@pipeline().parameters.mp_Employee_shiftAllotment",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "fact_dim",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute Pipeline1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "silver",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "fact_dim_gold",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "fact_dim",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "gold",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"parameters": {
+			"mp_Employee_info_from_HR": {
+				"type": "string",
+				"defaultValue": "Employee_info_from_HR"
+			},
+			"mp_Employee_designation_from_TA": {
+				"type": "string",
+				"defaultValue": "Employee_designation_from_TA"
+			},
+			"mp_Employee_Stack": {
+				"type": "string",
+				"defaultValue": "Employee_Stack"
+			},
+			"mp_Emp_baseLocation": {
+				"type": "string",
+				"defaultValue": "Emp_baseLocation"
+			},
+			"mp_Employee_Project_allocation_from_RDG": {
+				"type": "string",
+				"defaultValue": "Employee_Project_allocation_from_RDG"
+			},
+			"mp_Employee_shiftAllotment": {
+				"type": "string",
+				"defaultValue": "Employee_shiftAllotment"
+			}
+		},
+		"folder": {
+			"name": "EMP_WTO_Incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-12T10:46:20Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

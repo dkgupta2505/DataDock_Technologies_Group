@@ -1,0 +1,15 @@
+{
+	"name": "adf-dd-prct",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "3d1f3e31-10be-413e-8114-459fd0e2b019",
+		"tenantId": "a768b722-2997-4e9a-9db1-1b6019db1317"
+	}
+}

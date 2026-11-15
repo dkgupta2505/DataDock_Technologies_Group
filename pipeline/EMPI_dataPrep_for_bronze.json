@@ -1,0 +1,97 @@
+{
+	"name": "EMPI_dataPrep_for_bronze",
+	"properties": {
+		"activities": [
+			{
+				"name": "df_dataPrep_bronze",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "dfConsolidate",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"dfsrcEmployeeInfoFromHR": {
+								"filename": {
+									"value": "@{pipeline().parameters.p_Employee_info_from_HR}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+									"type": "Expression"
+								},
+								"adls_folderName": "data_Landing_zone"
+							},
+							"dfsrcEmployeeProjectAllocationFromRDG": {
+								"filename": {
+									"value": "@{pipeline().parameters.p_Employee_Project_allocation_from_RDG}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+									"type": "Expression"
+								},
+								"adls_folderName": "data_Landing_zone"
+							},
+							"dfSrcEmployeeStack": {
+								"filename": {
+									"value": "@{pipeline().parameters.p_Employee_Stack}_@{formatDateTime(utcNow(),'yyyyMMdd')}.json",
+									"type": "Expression"
+								}
+							},
+							"dfSrcEmployeeDesignationFromTA": {
+								"filename": {
+									"value": "@{pipeline().parameters.p_Employee_designation_from_TA}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+									"type": "Expression"
+								},
+								"adls_folderName": "data_Landing_zone"
+							},
+							"dfSrcEmployeeShiftAllotment": {
+								"filename": {
+									"value": "@{pipeline().parameters.p_Employee_shiftAllotment}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+									"type": "Expression"
+								},
+								"adls_folderName": "data_Landing_zone"
+							},
+							"azSqltbl": {
+								"schema_name": "bronze",
+								"tablename": "emp_consolidate_tbl"
+							}
+						}
+					},
+					"integrationRuntime": {
+						"referenceName": "ir-azure-services",
+						"type": "IntegrationRuntimeReference"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"parameters": {
+			"p_Employee_info_from_HR": {
+				"type": "string"
+			},
+			"p_Employee_designation_from_TA": {
+				"type": "string"
+			},
+			"p_Employee_Stack": {
+				"type": "string"
+			},
+			"p_Emp_baseLocation": {
+				"type": "string"
+			},
+			"p_Employee_Project_allocation_from_RDG": {
+				"type": "string"
+			},
+			"p_Employee_shiftAllotment": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "EMP_WTO_Incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-12T10:46:20Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

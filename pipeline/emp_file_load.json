@@ -1,0 +1,210 @@
+{
+	"name": "emp_file_load",
+	"properties": {
+		"activities": [
+			{
+				"name": "src_Employee_info_from_HR_github",
+				"type": "WebActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": "https://api.github.com/repos/dkgupta2505/DataDock_Technologies_Group/commits?path=Employee_info_from_HR.csv&per_page=1"
+				}
+			},
+			{
+				"name": "Checking_file_in_processlog",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "src_Employee_info_from_HR_github",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "select sum(cnt) as cnt \nfrom (select  1  cnt\nfrom dbo.file_process_log_tbl\nwhere file_name='@{pipeline().parameters.c2_Employee_info_from_HR}.csv'\nand src_file_modify_dt='@{json(activity('src_Employee_info_from_HR_github').output.Response)[0].commit.author.date}'\nunion all \nselect 1 )t1",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "dbo",
+							"tablename": "file_process_log_tbl"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "If new or modified file",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Checking_file_in_processlog",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Checking_file_in_processlog').output.value[0].cnt, 1)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "get_file_from_git_to_alds",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "HttpReadSettings",
+										"requestMethod": "GET"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_gitdata_csv",
+									"type": "DatasetReference",
+									"parameters": {
+										"fileName": {
+											"value": "@{pipeline().parameters.c2_Employee_info_from_HR}",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_adls_fen2_csv",
+									"type": "DatasetReference",
+									"parameters": {
+										"filename": {
+											"value": "@{pipeline().parameters.c2_Employee_info_from_HR}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+											"type": "Expression"
+										},
+										"adls_folderName": "data_Landing_zone"
+									}
+								}
+							]
+						},
+						{
+							"name": "Script1",
+							"type": "Script",
+							"dependsOn": [
+								{
+									"activity": "get_file_from_git_to_alds",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"linkedServiceName": {
+								"referenceName": "linkedService_azSQLdb",
+								"type": "LinkedServiceReference"
+							},
+							"typeProperties": {
+								"scripts": [
+									{
+										"type": "Query",
+										"text": {
+											"value": "INSERT INTO dbo.file_process_log_tbl\n(\n    batch_id,\n    file_name,\n    src_file_modify_dt,\n    load_dt\n)\nSELECT\n    @{pipeline().parameters.c2_batch_id} AS batch_id,\n    '@{pipeline().parameters.c2_Employee_info_from_HR}.csv' AS file_name,\n    '@{json(activity('src_Employee_info_from_HR_github').output.Response)[0].commit.author.date}' AS src_file_modify_dt,\n    '@{utcNow('yyyy-MM-dd HH:mm:ss')}' AS load_dt;",
+											"type": "Expression"
+										}
+									}
+								],
+								"scriptBlockExecutionTimeout": "02:00:00"
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"c2_Employee_info_from_HR": {
+				"type": "string"
+			},
+			"c2_batch_id": {
+				"type": "int"
+			}
+		},
+		"variables": {
+			"c2_vb_batch_id": {
+				"type": "Integer"
+			}
+		},
+		"folder": {
+			"name": "empi_wt_incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-14T13:30:22Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

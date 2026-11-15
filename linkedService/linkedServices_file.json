@@ -1,0 +1,17 @@
+{
+	"name": "linkedServices_file",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "E:\\Azure-Databricks\\Data\\emp_db",
+			"userId": "DESKTOP-KKG2NNB\\Admin",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI4MDE2MDQ0Yi05Y2Y4LTQ2M2EtOTlkMC1mMmFhMzQ3NmU4NmYiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "ir-dkpc",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

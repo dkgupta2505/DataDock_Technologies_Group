@@ -1,0 +1,123 @@
+{
+	"name": "emp_master_gen2",
+	"properties": {
+		"activities": [
+			{
+				"name": "New_batch_id_gen",
+				"type": "Script",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "linkedService_azSQLdb",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": "select ISNULL(max(batch_id),100)+1 as batch_id from dbo.file_process_log_tbl"
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			},
+			{
+				"name": "Set_variable",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "New_batch_id_gen",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "pvb_batch_id",
+					"value": {
+						"value": "@activity('New_batch_id_gen').output.resultSets[0].rows[0].batch_id",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "data_collecttion",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Set_variable",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "emp_dataCollection_Gen2",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"c_Employee_info_from_HR": {
+							"value": "@pipeline().parameters.p_Employee_info_from_HR",
+							"type": "Expression"
+						},
+						"c_p_batch_id": {
+							"value": "@variables('pvb_batch_id')",
+							"type": "Expression"
+						},
+						"c_Employee_designation_from_TA": {
+							"value": "@pipeline().parameters.p_Employee_designation_from_TA",
+							"type": "Expression"
+						},
+						"c_Emp_baseLocation": {
+							"value": "@pipeline().parameters.p_Emp_baseLocation",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"p_Employee_info_from_HR": {
+				"type": "string",
+				"defaultValue": "Employee_info_from_HR"
+			},
+			"p_Employee_designation_from_TA": {
+				"type": "string",
+				"defaultValue": "Employee_designation_from_TA"
+			},
+			"p_Emp_baseLocation": {
+				"type": "string",
+				"defaultValue": "Emp_baseLocation"
+			}
+		},
+		"variables": {
+			"pvb_batch_id": {
+				"type": "Integer"
+			}
+		},
+		"folder": {
+			"name": "empi_wt_incremental"
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-15T04:01:17Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
