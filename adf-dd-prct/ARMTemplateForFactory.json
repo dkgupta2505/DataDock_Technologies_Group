@@ -3451,6 +3451,236 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Employee_shiftAllotment_load')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "get_file_lastmodifiedDT",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_onprem_csv",
+								"type": "DatasetReference",
+								"parameters": {
+									"filename": {
+										"value": "@{pipeline().parameters.cc_Employee_shiftAllotment}.csv",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"lastModified"
+							],
+							"storeSettings": {
+								"type": "FileServerReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "Build_condition",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "get_file_lastmodifiedDT",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "select sum(cnt) as cnt from  \n(select 1 as cnt\nfrom dbo.file_process_log_tbl \nwhere file_name='@{pipeline().parameters.cc_Employee_shiftAllotment}.csv' and \nsrc_file_modify_dt='@{activity('get_file_lastmodifiedDT').output.lastModified}'\nunion all\nselect 1  )t1",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_azSQLdb",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"tablename": "file_process_log_tbl"
+								}
+							}
+						}
+					},
+					{
+						"name": "check_existing_file",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "Build_condition",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(activity('Build_condition').output.firstRow.cnt,1)",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "copy_Employee_shiftAllotment",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "DelimitedTextSource",
+											"storeSettings": {
+												"type": "FileServerReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "DelimitedTextReadSettings"
+											}
+										},
+										"sink": {
+											"type": "DelimitedTextSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "DelimitedTextWriteSettings",
+												"quoteAllText": true,
+												"fileExtension": ".txt"
+											}
+										},
+										"enableStaging": false,
+										"translator": {
+											"type": "TabularTranslator",
+											"typeConversion": true,
+											"typeConversionSettings": {
+												"allowDataTruncation": true,
+												"treatBooleanAsNumber": false
+											}
+										}
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_onprem_csv",
+											"type": "DatasetReference",
+											"parameters": {
+												"filename": {
+													"value": "@{pipeline().parameters.cc_Employee_shiftAllotment}.csv",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_adls_fen2_csv",
+											"type": "DatasetReference",
+											"parameters": {
+												"filename": {
+													"value": "@{pipeline().parameters.cc_Employee_shiftAllotment}_@{formatDateTime(utcNow(),'yyyyMMdd')}.csv",
+													"type": "Expression"
+												},
+												"adls_folderName": "data_Landing_zone"
+											}
+										}
+									]
+								},
+								{
+									"name": "Log_fileinfo",
+									"type": "Script",
+									"dependsOn": [
+										{
+											"activity": "copy_Employee_shiftAllotment",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "linkedService_azSQLdb",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": {
+													"value": "INSERT INTO dbo.file_process_log_tbl\n(\n    batch_id,\n    file_name,\n    src_file_modify_dt,\n    load_dt\n)\nSELECT\n    @{pipeline().parameters.cc_batch_id} AS batch_id,\n  '@{pipeline().parameters.cc_Employee_shiftAllotment}.csv'  as file_name,\n'@{activity('get_file_lastmodifiedDT').output.lastModified}' as last_modification_dt,\n    '@{utcNow('yyyy-MM-dd HH:mm:ss')}' AS load_dt;",
+													"type": "Expression"
+												}
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"cc_Employee_shiftAllotment": {
+						"type": "string"
+					},
+					"cc_batch_id": {
+						"type": "string"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_onprem_csv')]",
+				"[concat(variables('factoryId'), '/datasets/ds_azSQLdb')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_fen2_csv')]",
+				"[concat(variables('factoryId'), '/linkedServices/linkedService_azSQLdb')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/Load_Employee_Stack')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -3832,6 +4062,39 @@
 								}
 							}
 						}
+					},
+					{
+						"name": "OnPremCsvFile",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "OnPremJsonFile",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Employee_shiftAllotment_load",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"cc_Employee_shiftAllotment": {
+									"value": "@pipeline().parameters.c_Employee_shiftAllotment",
+									"type": "Expression"
+								},
+								"cc_batch_id": {
+									"value": "@pipeline().parameters.c_p_batch_id",
+									"type": "Expression"
+								}
+							}
+						}
 					}
 				],
 				"policy": {
@@ -3852,6 +4115,9 @@
 					},
 					"c_Employee_Stack": {
 						"type": "string"
+					},
+					"c_Employee_shiftAllotment": {
+						"type": "string"
 					}
 				},
 				"folder": {
@@ -3863,7 +4129,8 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/emp_file_load')]",
 				"[concat(variables('factoryId'), '/pipelines/Emp_adls_csv_Gen2')]",
-				"[concat(variables('factoryId'), '/pipelines/Load_Employee_Stack')]"
+				"[concat(variables('factoryId'), '/pipelines/Load_Employee_Stack')]",
+				"[concat(variables('factoryId'), '/pipelines/Employee_shiftAllotment_load')]"
 			]
 		},
 		{
@@ -4184,6 +4451,10 @@
 								"c_Employee_Stack": {
 									"value": "@pipeline().parameters.p_Employee_Stack",
 									"type": "Expression"
+								},
+								"c_Employee_shiftAllotment": {
+									"value": "@pipeline().parameters.p_Employee_shiftAllotment",
+									"type": "Expression"
 								}
 							}
 						}
@@ -4208,6 +4479,10 @@
 					"p_Employee_Stack": {
 						"type": "string",
 						"defaultValue": "Employee_Stack"
+					},
+					"p_Employee_shiftAllotment": {
+						"type": "string",
+						"defaultValue": "Employee_shiftAllotment"
 					}
 				},
 				"variables": {
