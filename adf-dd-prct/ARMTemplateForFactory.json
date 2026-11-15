@@ -3451,6 +3451,287 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('factoryName'), '/Load_Employee_Stack')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "ds_getfileInfo_onprem",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_onPremFile",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "FileServerReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "JsonReadSettings"
+							}
+						}
+					},
+					{
+						"name": "Filter_Employee_Stack",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "ds_getfileInfo_onprem",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('ds_getfileInfo_onprem').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().name,'Employee_Stack.json')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Get_lastModificationDT",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "Filter_Employee_Stack",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "ds_onprem_file_json",
+								"type": "DatasetReference",
+								"parameters": {
+									"filename": {
+										"value": "@{pipeline().parameters.cc_p_Employee_Stack}.json",
+										"type": "Expression"
+									}
+								}
+							},
+							"fieldList": [
+								"lastModified"
+							],
+							"storeSettings": {
+								"type": "FileServerReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "JsonReadSettings"
+							}
+						}
+					},
+					{
+						"name": "checking_existing",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Get_lastModificationDT",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"sqlReaderQuery": {
+									"value": "select sum(cnt) as cnt from  \n(select 1 as cnt\nfrom dbo.file_process_log_tbl \nwhere file_name='@{activity('Filter_Employee_Stack').output.value[0].name}' and \nsrc_file_modify_dt='@{activity('Get_lastModificationDT').output.lastModified}'\nunion all\nselect 1  )t1",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "ds_azSQLdb",
+								"type": "DatasetReference",
+								"parameters": {
+									"schema_name": "dbo",
+									"tablename": "file_process_log_tbl"
+								}
+							}
+						}
+					},
+					{
+						"name": "If Condition1",
+						"type": "IfCondition",
+						"dependsOn": [
+							{
+								"activity": "checking_existing",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@equals(activity('checking_existing').output.firstRow.cnt, 1)\n",
+								"type": "Expression"
+							},
+							"ifTrueActivities": [
+								{
+									"name": "Employee_Stack_load",
+									"type": "Copy",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"source": {
+											"type": "JsonSource",
+											"storeSettings": {
+												"type": "FileServerReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											},
+											"formatSettings": {
+												"type": "JsonReadSettings"
+											}
+										},
+										"sink": {
+											"type": "JsonSink",
+											"storeSettings": {
+												"type": "AzureBlobFSWriteSettings"
+											},
+											"formatSettings": {
+												"type": "JsonWriteSettings"
+											}
+										},
+										"enableStaging": false
+									},
+									"inputs": [
+										{
+											"referenceName": "ds_onprem_file_json",
+											"type": "DatasetReference",
+											"parameters": {
+												"filename": {
+													"value": "@{activity('Filter_Employee_Stack').output.Value[0].name}",
+													"type": "Expression"
+												}
+											}
+										}
+									],
+									"outputs": [
+										{
+											"referenceName": "ds_adls_gen2_json",
+											"type": "DatasetReference",
+											"parameters": {
+												"filename": {
+													"value": "@{substring(activity('Filter_Employee_Stack').output.value[0].name,0,indexOf(activity('Filter_Employee_Stack').output.value[0].name,'.'))}_@{formatDateTime(utcNow(),'yyyMMdd')}.json",
+													"type": "Expression"
+												}
+											}
+										}
+									]
+								},
+								{
+									"name": "log_transaction",
+									"type": "Script",
+									"dependsOn": [
+										{
+											"activity": "Employee_Stack_load",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "linkedService_azSQLdb",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": {
+													"value": "INSERT INTO dbo.file_process_log_tbl\n(\n    batch_id,\n    file_name,\n    src_file_modify_dt,\n    load_dt\n)\nSELECT\n    @{pipeline().parameters.cc_p_batch_id} AS batch_id,\n  '@{activity('Filter_Employee_Stack').output.value[0].name}' as file_name,\n'@{activity('Get_lastModificationDT').output.lastModified}' as last_modification_dt,\n    '@{utcNow('yyyy-MM-dd HH:mm:ss')}' AS load_dt;",
+													"type": "Expression"
+												}
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"cc_p_Employee_Stack": {
+						"type": "string"
+					},
+					"cc_p_batch_id": {
+						"type": "int"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/ds_onPremFile')]",
+				"[concat(variables('factoryId'), '/datasets/ds_onprem_file_json')]",
+				"[concat(variables('factoryId'), '/datasets/ds_azSQLdb')]",
+				"[concat(variables('factoryId'), '/datasets/ds_adls_gen2_json')]",
+				"[concat(variables('factoryId'), '/linkedServices/linkedService_azSQLdb')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/emp_dataCollection_Gen2')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -3518,6 +3799,39 @@
 								}
 							}
 						}
+					},
+					{
+						"name": "OnPremJsonFile",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Emp_adls_csv",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Load_Employee_Stack",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"cc_p_Employee_Stack": {
+									"value": "@pipeline().parameters.c_Employee_Stack",
+									"type": "Expression"
+								},
+								"cc_p_batch_id": {
+									"value": "@pipeline().parameters.c_p_batch_id",
+									"type": "Expression"
+								}
+							}
+						}
 					}
 				],
 				"policy": {
@@ -3535,6 +3849,9 @@
 					},
 					"c_Emp_baseLocation": {
 						"type": "string"
+					},
+					"c_Employee_Stack": {
+						"type": "string"
 					}
 				},
 				"folder": {
@@ -3545,7 +3862,8 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/emp_file_load')]",
-				"[concat(variables('factoryId'), '/pipelines/Emp_adls_csv_Gen2')]"
+				"[concat(variables('factoryId'), '/pipelines/Emp_adls_csv_Gen2')]",
+				"[concat(variables('factoryId'), '/pipelines/Load_Employee_Stack')]"
 			]
 		},
 		{
@@ -3862,6 +4180,10 @@
 								"c_Emp_baseLocation": {
 									"value": "@pipeline().parameters.p_Emp_baseLocation",
 									"type": "Expression"
+								},
+								"c_Employee_Stack": {
+									"value": "@pipeline().parameters.p_Employee_Stack",
+									"type": "Expression"
 								}
 							}
 						}
@@ -3882,6 +4204,10 @@
 					"p_Emp_baseLocation": {
 						"type": "string",
 						"defaultValue": "Emp_baseLocation"
+					},
+					"p_Employee_Stack": {
+						"type": "string",
+						"defaultValue": "Employee_Stack"
 					}
 				},
 				"variables": {
@@ -4267,6 +4593,42 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/linkedServices/githubAPI')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_onPremFile')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "linkedServices_file",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "FileServerLocation",
+						"folderPath": "csv/Adf+databricks/OnPrem_JsonFormat"
+					}
+				},
+				"schema": {
+					"type": "object",
+					"properties": {
+						"Emp_id": {
+							"type": "integer"
+						},
+						"Stack_Layer": {
+							"type": "string"
+						},
+						"Tools_Technologies": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/linkedServices_file')]"
 			]
 		},
 		{
