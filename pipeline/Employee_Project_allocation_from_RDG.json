@@ -1,0 +1,122 @@
+{
+	"name": "Employee_Project_allocation_from_RDG",
+	"properties": {
+		"activities": [
+			{
+				"name": "getDataFromSQLtoFile",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "get_trt_file_last_modifyedDt",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": {
+							"value": "@select * \nfrom dbo.Employee_Project_allocation_from_RDG \nwhere modified_dt>'@{activity('get_trt_file_last_modifyedDt').output.value[0].tgt_file_modify_dt}'\n\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_onprem_sqlserver",
+						"type": "DatasetReference",
+						"parameters": {
+							"scheam": "dbo",
+							"tablename": "Employee_Project_allocation_from_RDG"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "ds_adls_fen2_csv",
+						"type": "DatasetReference",
+						"parameters": {
+							"filename": {
+								"value": "@{pipeline().parameters.cc_Employee_Project_allocation_from_RDG}_@{formatDateTime(utcNow(),'yyyy-MM-dd')}.csv",
+								"type": "Expression"
+							},
+							"adls_folderName": "data_Landing_zone"
+						}
+					}
+				]
+			},
+			{
+				"name": "get_trt_file_last_modifyedDt",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "select isnull(max(src_file_modify_dt),'1999-01-01') tgt_file_modify_dt \nfrom dbo.file_process_log_tbl where file_name='Employee_Project_allocation_from_RDG'",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_azSQLdb",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "dbo",
+							"tablename": "file_process_log_tbl"
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"cc_Employee_Project_allocation_from_RDG": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"cc_vb_tgt_file_modify_dt": {
+				"type": "String"
+			}
+		},
+		"annotations": []
+	}
+}

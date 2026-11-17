@@ -5,6 +5,8 @@
 			{
 				"name": "src_Employee_info_from_HR",
 				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [],
 				"policy": {
 					"secureInput": false
@@ -31,6 +33,8 @@
 			{
 				"name": "Emp_adls_csv",
 				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "src_Employee_info_from_HR",
@@ -68,6 +72,8 @@
 			{
 				"name": "OnPremJsonFile",
 				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "Emp_adls_csv",
@@ -129,6 +135,29 @@
 							"type": "Expression"
 						}
 					}
+				}
+			},
+			{
+				"name": "OnPrem_sqlServer",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "OnPremCsvFile",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Employee_Project_allocation_from_RDG",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
 				}
 			}
 		],
